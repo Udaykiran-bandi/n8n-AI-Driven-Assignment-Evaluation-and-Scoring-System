@@ -3,7 +3,8 @@
 This repo contains an automated workflow built with **n8n**, designed to evaluate student assignments pdf's submitted in ZIP format. The system extracts question–answer pairs, sends them to an AI model for scoring, and replies to the user with a detailed evaluation.
 
 ---
-<img width="1886" height="840" alt="image" src="https://github.com/user-attachments/assets/c2062315-b6ce-4ebb-ae99-79b56a6bf152" />
+<img width="797" height="425" alt="image" src="https://github.com/user-attachments/assets/78267f68-a47a-47da-b03e-490848abca93" />
+
 
 
 ---
