@@ -1,0 +1,318 @@
+{
+  "name": "AI-Driven Assignment Evaluation and Scoring System Task",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        144
+      ],
+      "id": "64892296-1c11-4478-aa5f-25760c8853c1",
+      "name": "Telegram Trigger",
+      "webhookId": "cfcd8a0f-0715-4829-a0e1-265d8a56b169",
+      "credentials": {
+        "telegramApi": {
+          "id": "OVG1ZayNlrAYZYMY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "outputPrefix": "data"
+      },
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        -496,
+        144
+      ],
+      "id": "9e3fb1f0-d1bd-4ad7-af59-9ab51acfdf57",
+      "name": "Compression"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=$binary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        144
+      ],
+      "id": "94c9a1dc-669a-41fd-b680-a91efe521a14",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -144,
+        144
+      ],
+      "id": "673e560d-0ef6-41fd-b569-e06d6aa6d032",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "={{ $binary.keys()[0] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        80,
+        160
+      ],
+      "id": "2fa4dd76-9379-40fc-86a2-3e20b18d21c5",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You will receive the full text of one student's assignment.\n\nThe text contains Python questions and the student's answers.\nYour tasks:\n1. Detect each question and its corresponding student answer.\n2. For each question, assign a score from 0 to 10.\n3. Calculate the total score (sum first 10 quesstions scores).\n4. Give a short overall feedback summary for the whole assignment.\n\nStudent Name: {{ $json[\"Student Name\"] || \"Unknown\" }}\nModule: {{ $json[\"Module Name\"] || \"Python Module\" }}\n\nAssignment Text:\n<<<ASSIGNMENT_START>>>\n{{ $json.text }}\n<<<ASSIGNMENT_END>>>\n\nNow produce the final evaluation in the EXACT format below (no extra text):\n\nAssignment Evaluation Report\nStudent: <Student Name if there else put \"Unknown Innominion\">\nModule: <decide the \"Module name\" based on all the questions Topic>\n\nQ1 Question : <1st question from text>\nAnswer : <answer under 20 tokens>\nScore: <score for 1st question answer>/10\n\nQ2 Question : <2st question from text>\nAnswer : <answer under 20 tokens>\nScore: <score for 2nd question answer>/10\n\n[Continue like this for for first 10 questions.]\n\nTotal Score: <total_score>/100\nOverall Feedback: <overall_feedback>\n\nNote : give the whole output under 3500 tokens only.",
+        "options": {
+          "systemMessage": "=You are a senior Python instructor at Innomatics Research Labs.\n\nYour job is to evaluate student assignments fairly and consistently.\n\nEach assignment contains:\n- One or more programming questions.\n- The student's answers to those questions.\n\nEvaluation rules:\n- For every question, give a score from 0 to 10.\n- Focus on correctness, logic, code quality, edge cases, and clarity of explanation.\n- Be strict but fair. Do NOT give full marks unless the answer is clearly perfect.\n- If the answer is missing or completely wrong, give 0/10.\n\nYour response MUST strictly follow the format requested in the user message.\nDo not invent questions or answers that are not in the text.\nDo not add any extra commentary outside the requested format.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        256,
+        160
+      ],
+      "id": "961eafc3-818d-44a1-a29a-80c45f5fe504",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        192,
+        384
+      ],
+      "id": "06f517a2-63d1-4c45-bc02-4736f210dbd4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "F7dMD32h4Ra87ZnG",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        592,
+        160
+      ],
+      "id": "0653d078-1ee2-44a1-8d57-6447f21159f3",
+      "name": "Send a text message",
+      "webhookId": "fd32db81-c31d-4385-826f-8c763a1b77e1",
+      "credentials": {
+        "telegramApi": {
+          "id": "OVG1ZayNlrAYZYMY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        160
+      ],
+      "id": "7ade508e-abe6-4cca-90f1-35c68358b21f",
+      "name": "Wait",
+      "webhookId": "d7f2107b-6186-4fa0-b798-9bc4a6ae4013"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Done",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "1ddaa815-d15e-43eb-b12a-4f0d7777977e",
+      "name": "Send a text message1",
+      "webhookId": "fd32db81-c31d-4385-826f-8c763a1b77e1",
+      "credentials": {
+        "telegramApi": {
+          "id": "OVG1ZayNlrAYZYMY",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# **AI-Driven Assignment Evaluation and Scoring System**",
+        "height": 816,
+        "width": 1712
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -752,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "f512de4d-f13f-4e05-8d30-f4173539fd14",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Compression",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compression": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "de84deeb-4327-44ac-a3cc-8c9688f79e66",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e10e01aa05f7ff3fb236fdf437e39ab55031617216bdc6b00455ccbf3bd29aef"
+  },
+  "id": "c9ILlce3eludc1oS",
+  "tags": []
+}
